@@ -1,0 +1,89 @@
+GroupHasDerangement:=function(n,d)
+  E:=[];
+  G:=SmallGroup(n,d);
+  if not IsNilpotent(G) then 
+    S:=Subgroups(G);
+    m:=#S;
+    O:=[];
+    U:=[];
+    for i in [1..m] do
+      OO:=S[m+1-i]`order;
+      O:=Append(O,OO);
+      H:=S[m+1-i]`subgroup;
+      C:=Conjugates(G,H);
+      KK:={};
+      for K in C do
+        KK:=KK join Set(K);
+      end for;
+      U:=Append(U,KK);
+      for j in [2..i] do
+        if O[i] eq O[j] then
+          if #(U[i] join U[j]) eq #G then
+            E:=Append(E,[n,d,m+1-i,m+1-j]);
+          end if;
+        end if;
+      end for;
+    end for;
+  end if;
+  if #E eq 0 then
+    return true, _;
+  else
+    return false, E;
+  end if;
+end function;
+
+GroupHasDerangementOrder:=function(n)
+  EE:=[];
+  D:=NumberOfSmallGroups(n);
+  for d in [1..D] do
+    b,E:=GroupHasDerangement(n,d);
+    if b eq false then
+      EE:=Append(EE,E);
+    end if;
+  end for;
+  if #EE eq 0 then
+    return true, _;
+  else
+    return false, EE;
+  end if;
+end function;
+
+CheckGroupHasDerangement:=procedure(A)
+  for n in A do
+    b,E:=GroupHasDerangementOrder(n);
+    if b eq true then
+      print n;
+    else
+      print E;
+    end if;
+  end for;
+end procedure;
+
+IsNilpotentNumber:=function(n)
+  p:=Factorization(n);
+  m:=#p;
+  for i in [1..m] do
+    for j in [1..m] do
+      for k in [1..p[i][2]] do
+        if (p[i][1]^k mod p[j][1]) eq 1 then
+          return false;
+        end if;
+      end for;
+    end for;
+  end for;
+  return true;
+end function;
+
+IsAlmostSquareFree:=function(n)
+  p:=Factorization(n);
+  X:=[x : x in p | x[2] gt 1];
+  if #X le 1 then
+    return true;
+  else
+    return false;
+  end if;
+end function;
+      
+A:=[n : n in [1..2000] | not IsAlmostSquareFree(n) and not IsNilpotentNumber(n)];
+
+CheckGroupHasDerangement(A);
