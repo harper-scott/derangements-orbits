@@ -1,0 +1,136 @@
+// Magma code for:
+//
+// "Orbits of permutation groups with no derangements"
+//
+// Scott Harper
+
+// preliminaries
+
+// IsNilpotentNumber
+// input: positive integer n (with prime factorisation p_1^a_1 ... p_m^a_m)
+// output: true iff p_j does'nt divide p_i^k-1 for all 1 <= k <= a_i & 1 <= i,j <= m
+
+IsNilpotentNumber:=function(n)
+  p:=Factorization(n);
+  m:=#p;
+  for i in [1..m] do
+    for j in [1..m] do
+      for k in [1..p[i][2]] do
+        if (p[i][1]^k mod p[j][1]) eq 1 then
+          return false;
+        end if;
+      end for;
+    end for;
+  end for;
+  return true;
+end function;
+
+// IsAlmostSquareFree
+// input: positive integer n (with prime factorisation p_1^a_1 ... p_m^a_m)
+// output: true iff a_i > 1 for at most one value of i with 1 <= i <= m
+
+IsAlmostSquareFree:=function(n)
+  p:=Factorization(n);
+  X:=[x : x in p | x[2] gt 1];
+  if #X le 1 then
+    return true;
+  else
+    return false;
+  end if;
+end function;
+
+// GroupHasDerangement
+// input: positive integers n, d
+// output: true iff G = SmallGroup(n,d) satisfies the Conjecture
+// comment: we immediately return true if one of the following happens
+// * IsNilpotentNumber(n) is true:
+//     Here G is guaranteed to be nilpotent and hence satisfy the Conjecture.
+// * IsAlmostSquareFree(n) is true:
+//     Here if G is the union of conjugates of subgroups H1 and H2 of order k, then 
+//     every prime divisor of n divides k, so n/k is a prime power and G satisfies 
+//     the Conjecture.
+   
+GroupHasDerangement:=function(n,d)
+  if not IsAlmostSquareFree(n) and not IsNilpotentNumber(n) then
+    G:=SmallGroup(n,d);
+    if not IsNilpotent(G) then
+      nf:=#Factorization(n); 
+      S:=Subgroups(G);
+      m:=#S;
+      I:=[];
+      O:=[];
+      U:=[];
+      for i in [1..m] do 
+        OO:=S[i]`order;
+        id:=Integers()!(#G/OO);
+        if (#Factorization(OO) eq nf) and (id gt 1) and (not IsPrimePower(id)) then
+          I:=Append(I,i);
+          O:=Append(O,OO);
+          H:=S[i]`subgroup;
+          C:=Conjugates(G,H);
+          KK:={};
+          for K in C do
+            KK:=KK join Set(K);
+          end for;
+          U:=Append(U,KK);
+        else
+          O:=Append(O,0);
+          U:=Append(U,{Id(G)});
+        end if;
+      end for;
+      for i in [1..m] do
+        for j in [1..i] do
+          if (i in I) and (j in I) and (O[i] eq O[j]) then
+            if #(U[i] join U[j]) eq #G then
+              return false;
+            end if;
+          end if;
+        end for;
+      end for;
+    end if;
+  end if;
+  return true;
+end function;
+
+// GroupHasDerangementOrder
+// input: positive integer n
+// output: true iff every group of order n satisfies the Conjecture
+// comment: the status of the computation is printed to screen
+
+GroupHasDerangementOrder:=function(n)
+  D:=NumberOfSmallGroups(n);
+  for d in [1..D] do
+    if GroupHasDerangement(n,d) eq false then
+      return false;
+    end if;
+    print n, ":", d, "of", D;
+  end for;
+  return true;
+end function;
+
+// CheckGroupHasDerangementOrder
+// input: sequence of positive integers A
+// output: true iff every group of order n satisfies the Conjecture for all n in A
+// comments:
+//  (a) the status of the computation is printed to screen
+//  (b) the result is printed to file "derangements-orbits.txt");
+
+CheckGroupHasDerangement:=function(A)
+  for n in A do
+    if GroupHasDerangementOrder(n) eq false then
+      Write("derangements-orbits.txt","false");
+      return false;
+    end if;
+  end for;
+  Write("derangements-orbits.txt","true");
+  return true;
+end function;
+
+// main code
+
+CheckGroupHasDerangement([1..1000]);
+
+// specifications
+// * software: Magma V2.28-10
+// * hardware: 64GB memory, 4.9GHz RAM
+// * computation: 8348s time, 536MB memory 
